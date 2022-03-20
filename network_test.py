@@ -112,7 +112,7 @@ class TestNetwork(unittest.TestCase):
         (_, z2, z3, z4) = z
         a4 = a[-1]
 
-        e4 = n.cost_derivative(a4, y_converted) * sigmoid_prime(z4)
+        e4 = n.cost.delta(a4, y_converted, z4)
         e3 = (w4.transpose() @ e4) * sigmoid_prime(z3)
         e2 = (w3.transpose() @ e3) * sigmoid_prime(z2)
         e1 = np.zeros(x.shape)
@@ -160,12 +160,14 @@ class TestNetwork(unittest.TestCase):
         # From: https://mattmazur.com/2015/03/17/a-step-by-step-backpropagation-example/
         # Setup, this example uses some different conventions
         # Namely, a different expected vector
-        # And a vectorized cost function (which is wrong, but this is the best example I could find)
+        # And a vector cost function (which is wrong, but this is the best example I could find)
         def convert_expected(self, y):
             return np.array([0.01, 0.99])
 
-        def cost_derivative(self, p, e):
-            return p - e
+        class ComponentWiseQuadraticCost:
+            @staticmethod
+            def delta(predicted, expected, weighted_input):
+                return (predicted - expected) * sigmoid_prime(weighted_input)
 
         x = np.array([0.05, 0.10])
         y = 1
@@ -177,9 +179,8 @@ class TestNetwork(unittest.TestCase):
         w2 = np.array([[0.15, 0.20], [0.25, 0.30]])
         w3 = np.array([[0.40, 0.45], [0.50, 0.55]])
 
-        n = Network([2, 2, 2])
+        n = Network([2, 2, 2], cost = ComponentWiseQuadraticCost)
         n.convert_expected = types.MethodType(convert_expected, n)
-        n.cost_derivative = types.MethodType(cost_derivative, n)
         n.biases = [b2, b3]
         n.weights = [w2, w3]
 

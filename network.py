@@ -1,5 +1,6 @@
 # Based on: http://neuralnetworksanddeeplearning.com/chap1.html
 
+from os import stat
 import random
 
 import numpy as np
@@ -9,12 +10,38 @@ def sigmoid(z):
 
 
 def sigmoid_prime(z):
-    return sigmoid(z) * (1 - sigmoid(z))
+    s = sigmoid(z)
+    return s * (1 - s)
+
+
+class QuadraticCost:
+    @staticmethod
+    def value(predicted, expected):
+        difference = expected - predicted
+        return 0.5 * np.dot(difference, difference)
+
+    
+    @staticmethod
+    def delta(predicted, expected, weighted_input):
+        return (predicted - expected) * sigmoid_prime(weighted_input)
+
+
+class CrossEntropyCost:
+    @staticmethod
+    def value(predicted, expected):
+        return -np.sum(np.nan_to_num(expected * np.log(predicted) - (1 - expected) * np.log(1 - predicted)))
+
+
+    @staticmethod
+    def delta(predicted, expected, weighted_input):
+        return predicted - expected
 
 
 class Network(object):
-    def __init__(self, sizes):
+    def __init__(self, sizes, cost=QuadraticCost):
         self.sizes = sizes
+        self.cost = cost
+
         self.layer_count = len(self.sizes)
 
         self.biases = [np.random.randn(s) for s in sizes[1:]]
@@ -102,7 +129,7 @@ class Network(object):
         errors = [np.zeros(size) for size in self.sizes]
         predicted = activations[-1]
 
-        errors[-1] = self.cost_derivative(predicted, expected) * sigmoid_prime(weighted_inputs[-1])
+        errors[-1] = self.cost.delta(predicted, expected, weighted_inputs[-1])
 
         # The final error is excluded because it is not needed
         for i in range(self.layer_count-2, 0, -1):
@@ -113,10 +140,6 @@ class Network(object):
             errors[i] = np.transpose(w_front) @ error_front * sigmoid_prime(z_back)
 
         return errors
-
-
-    def cost_derivative(self, predicted, expected):
-        return np.sum(predicted - expected)
 
 
     def train(self, data, eta):

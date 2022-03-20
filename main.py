@@ -1,4 +1,4 @@
-from network import Network
+import network
 
 from tensorflow.keras.datasets import mnist
 
@@ -18,5 +18,5 @@ if __name__ == "__main__":
     test_data = convert_data(test_data_raw, 10000)
 
     print("Starting learning")
-    n = Network([784, 30, 10])
+    n = network.Network([784, 30, 10], cost = network.CrossEntropyCost)
     n.stochastic_gradient_descent(training_data, 30, 10, 3.0, test_data)
